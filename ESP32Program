@@ -1,0 +1,165 @@
+/* DHT-22 - R2L -> GND;Data(4);Vcc(3v3)
+ * Gas sensors - R2L -> Vcc(5v);GND;digi O/p;anal o/p(36,39,35,32)
+ * Dust sensor - R2L -> LED Vcc (3v3);LED GND;LED control(15);Sensor GND;Sensor anal O/P(34);Vcc(3v3)*/
+
+#include "DHT.h";
+#include <GP2Y1010AU0F.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+
+//Populate these three variables with appropriate values
+const char* ssid = "SSID";
+const char* pass = "PASSWORD";
+const char* host = "HOST ADDRESS";
+
+WiFiClient client;
+
+#define DHTPIN 4
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+float humidity;  //Stores humidity value
+float temperature; //Stores temperature value
+
+int dustMeasurePin = 34;
+int ledPin = 15;
+
+GP2Y1010AU0F dustSensor(ledPin, dustMeasurePin);
+float dustDensity = 0;
+
+int COMeasurePin = 36;
+int COsensorValue;
+
+int CO2MeasurePin = 39;
+int CO2sensorValue;
+
+int SO2MeasurePin = 35;
+int SO2sensorValue;
+
+int NOxMeasurePin = 32;
+int NOxsensorValue;
+
+float AQI_Measured;
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, pass);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  //Initializing Gas sensor output pins
+  pinMode(COMeasurePin, INPUT);
+  pinMode(CO2MeasurePin, INPUT);
+  pinMode(SO2MeasurePin, INPUT);
+  pinMode(NOxMeasurePin, INPUT);
+  
+  dht.begin();
+  
+  dustSensor.begin();
+}
+
+void loop()
+{
+  //Reading the sensor output
+  COsensorValue  = analogRead(COMeasurePin) ;
+  CO2sensorValue = analogRead(CO2MeasurePin);
+  SO2sensorValue = analogRead(SO2MeasurePin);
+  NOxsensorValue = analogRead(NOxMeasurePin);
+
+  humidity = dht.readHumidity();
+  temperature = dht.readTemperature();
+
+  dustDensity = dustSensor.read();
+
+  Serial.print("Carbon monoxide concentration: "); // prints the value read
+  Serial.println(COsensorValue);
+  Serial.print("Carbon dioxide concentration: "); // prints the value read
+  Serial.println(CO2sensorValue);
+  Serial.print("Sulphur dioxide concentration: "); // prints the value read
+  Serial.println(SO2sensorValue);
+  Serial.print("Nitrogen Oxides concentration: "); // prints the value read
+  Serial.println(NOxsensorValue);
+
+  Serial.print("Humidity: ");
+  Serial.print(humidity);
+  Serial.print(" %, Temp: ");
+  Serial.print(temperature);
+  Serial.println(" Celsius");
+  Serial.print("Dust Density = ");
+  Serial.print(dustDensity);
+  Serial.println(" ug/m3");
+
+  sendToDatabase_Values();
+
+  aqiEntry();
+
+  delay(2000);
+}
+
+//Function to enter the Sensor readings into the datatable
+void sendToDatabase_Values()   //CONNECTING WITH MYSQL
+{
+  if (client.connect(host, 80))
+  {
+    Serial.println("Data entered");
+    // Make a HTTP request:
+    client.print(String("GET /pollutor/dataValuesEntry.php?") +
+                 ("&humidity=") + humidity +
+                 ("&temperature=") + temperature +
+                 ("&colevels=") + COsensorValue +
+                 ("&co2levels=") + CO2sensorValue +
+                 ("&noxlevels=") + NOxsensorValue +
+                 ("&so2levels=") + SO2sensorValue +
+                 ("&dustdensity=") + dustDensity);
+    client.print(" ");      //SPACE BEFORE HTTP/1.1
+    client.print("HTTP/1.1");
+    client.println();
+    client.println("Host: ");
+    client.print(host);
+    client.println("Connection: close");
+    client.println();
+  }
+  else
+  {
+    // if you didn't get a connection to the server:
+    Serial.println("connection failed");
+  }
+  delay(30000);
+} 
+
+//Function to execute the shell program to enter the AQI readings into the datatable
+void aqiEntry()   //CONNECTING WITH MYSQL
+{
+  if (client.connect(host, 80))
+  {
+    Serial.println("AQI values entered");
+    // Make a HTTP request:
+    client.print(String("GET /pollutor/aqiEntry.php"));
+    client.print(" ");      //SPACE BEFORE HTTP/1.1
+    client.print("HTTP/1.1");
+    client.println();
+    client.println("Host: ");
+    client.print(host);
+    client.println("Connection: close");
+    client.println();
+  }
+  else
+  {
+    // if you didn't get a connection to the server:
+    Serial.println("connection failed");
+  }
+  delay(30000);
+}
