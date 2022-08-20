@@ -1,2 +1,2 @@
 # AQI-Master
-Final year project. EEE 2018 batch
+Final year project. EEE 2022 batch
