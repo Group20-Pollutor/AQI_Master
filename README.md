@@ -5,11 +5,11 @@ Intelligent air quality monitoring and prediction system.
 
 > Android app can be found and downloaded from the releases section.
 
-> ML models subdirectory contains the programs used to train the AQI predicting and forecasting system.
+> ML models sub directory contains the programs used to train the AQI predicting and forecasting system.
 
 > Pollutor sub directory contains the server side programs used to store and retrieve the required data.
 
-> ESP-32 subdirectory contains the C program which has to be flashed into the microcontroller module. Please change the appropriate variables as required (for example, the SSID and password fields). 
+> ESP32 sub directory contains the C program which has to be flashed into the microcontroller module. Please change the appropriate variables as required (for example, the SSID and password fields). 
 
 
 Further links:
