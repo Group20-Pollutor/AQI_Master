@@ -137,7 +137,7 @@ void sendToDatabase_Values()   //CONNECTING WITH MYSQL
     // if you didn't get a connection to the server:
     Serial.println("connection failed");
   }
-  delay(3000);
+  delay(30000);
 } 
 
 //Function to execute the shell program to enter the AQI readings into the datatable
@@ -160,5 +160,5 @@ void aqiEntry()   //CONNECTING WITH MYSQL
     // if you didn't get a connection to the server:
     Serial.println("connection failed");
   }
-  delay(3000);
+  delay(30000);
 }
